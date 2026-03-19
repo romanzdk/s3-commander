@@ -2,8 +2,8 @@ const API = "/api";
 
 let activePane = 0;
 const paneState = [
-  { bucket: "", prefix: "", objects: [] },
-  { bucket: "", prefix: "", objects: [] },
+  { bucket: "", prefix: "", objects: [], buckets: null },
+  { bucket: "", prefix: "", objects: [], buckets: null },
 ];
 
 function setStatus(msg, type = "") {
@@ -42,17 +42,58 @@ function renderPane(paneIdx) {
   const pathInput = document.querySelector(`.path-input[data-path="${paneIdx}"]`);
   const selectAll = document.querySelector(`.select-all[data-pane="${paneIdx}"]`);
 
-  pathInput.value = state.bucket ? formatPath(state.bucket, state.prefix) : "";
+  pathInput.value = state.bucket ? formatPath(state.bucket, state.prefix) : "s3://";
 
   tbody.innerHTML = "";
-  if (!state.bucket) {
-    tbody.innerHTML = "<tr><td colspan='4'>Enter path (s3://bucket/prefix/) and press Go</td></tr>";
+  if (!state.bucket && !state.buckets) {
+    tbody.innerHTML = "<tr><td colspan='4'>Loading buckets...</td></tr>";
+    return;
+  }
+
+  if (!state.bucket && state.buckets !== null) {
+    if (state.buckets.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='4'>No buckets or error loading</td></tr>";
+      return;
+    }
+    for (const b of state.buckets) {
+      const tr = document.createElement("tr");
+      tr.dataset.bucket = b.name;
+      tr.innerHTML = `
+        <td></td>
+        <td class="prefix">${escapeHtml(b.name)}/</td>
+        <td class="size"></td>
+        <td class="modified">${escapeHtml(new Date(b.created).toLocaleDateString())}</td>
+      `;
+      tr.addEventListener("click", () => {
+        state.bucket = b.name;
+        state.prefix = "";
+        state.buckets = null;
+        loadPane(paneIdx);
+      });
+      tbody.appendChild(tr);
+    }
     return;
   }
 
   if (state.objects.length === 0) {
     tbody.innerHTML = "<tr><td colspan='4'>Loading...</td></tr>";
     return;
+  }
+
+  if (!state.prefix) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td></td>
+      <td class="prefix">..</td>
+      <td class="size"></td>
+      <td class="modified"></td>
+    `;
+    tr.addEventListener("click", () => {
+      state.bucket = "";
+      state.prefix = "";
+      loadPane(paneIdx);
+    });
+    tbody.appendChild(tr);
   }
 
   for (const obj of state.objects) {
@@ -121,9 +162,17 @@ async function loadPane(paneIdx) {
   const state = paneState[paneIdx];
   if (!state.bucket) {
     state.objects = [];
+    state.buckets = null;
+    try {
+      state.buckets = await fetchBuckets();
+    } catch (err) {
+      setStatus("Error: " + err.message, "error");
+      state.buckets = [];
+    }
     renderPane(paneIdx);
     return;
   }
+  state.buckets = null;
   try {
     const data = await fetchObjects(state.bucket, state.prefix);
     state.objects = data.objects;
@@ -248,21 +297,15 @@ function init() {
     const pathInput = document.querySelector(`.path-input[data-path="${idx}"]`);
     const btnGo = document.querySelector(`.btn-go[data-go="${idx}"]`);
 
-    pathInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        const parsed = parsePath(pathInput.value.trim());
-        if (parsed) {
-          paneState[idx].bucket = parsed.bucket;
-          paneState[idx].prefix = parsed.prefix;
-          loadPane(idx);
-        } else {
-          setStatus("Invalid path. Use s3://bucket/prefix/", "error");
-        }
+    const goToPath = () => {
+      const val = pathInput.value.trim();
+      if (val === "s3://" || val === "s3:") {
+        paneState[idx].bucket = "";
+        paneState[idx].prefix = "";
+        loadPane(idx);
+        return;
       }
-    });
-
-    btnGo.addEventListener("click", () => {
-      const parsed = parsePath(pathInput.value.trim());
+      const parsed = parsePath(val);
       if (parsed) {
         paneState[idx].bucket = parsed.bucket;
         paneState[idx].prefix = parsed.prefix;
@@ -270,7 +313,13 @@ function init() {
       } else {
         setStatus("Invalid path. Use s3://bucket/prefix/", "error");
       }
+    };
+
+    pathInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") goToPath();
     });
+
+    btnGo.addEventListener("click", goToPath);
   });
 
   document.getElementById("btn-copy").addEventListener("click", doCopy);
@@ -304,7 +353,9 @@ function init() {
   });
 
   setActivePane(0);
-  setStatus("Enter s3://bucket/prefix/ in each pane and press Go");
+  setStatus("Loading buckets...");
+  loadPane(0);
+  loadPane(1);
 }
 
 init();
