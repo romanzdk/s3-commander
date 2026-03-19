@@ -335,7 +335,7 @@ function init() {
     loadPane(1);
   });
 
-  const themeKey = "s3-browser-theme";
+  const themeKey = "s3-commander-theme";
   const btnTheme = document.getElementById("btn-theme");
   const savedTheme = localStorage.getItem(themeKey);
   if (savedTheme === "light") {

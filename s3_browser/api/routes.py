@@ -56,7 +56,7 @@ def _dst_key_for_item(src_key: str, dst_prefix: str) -> str:
     if src_key.endswith("/"):
         folder_name = src_key.rstrip("/").split("/")[-1]
         return dst_prefix + folder_name + "/"
-    return dst_prefix + src_key.split("/")[-1]
+    return dst_prefix + src_key.rsplit("/", maxsplit=1)[-1]
 
 
 @router.post("/move")
@@ -85,13 +85,9 @@ def copy_objects(body: MoveCopyBody) -> dict:
                 continue
             dst_key = _dst_key_for_item(src_key, body.dst_prefix)
             if src_key.endswith("/"):
-                s3_client.copy_prefix_recursive(
-                    body.src_bucket, src_key, body.dst_bucket, dst_key
-                )
+                s3_client.copy_prefix_recursive(body.src_bucket, src_key, body.dst_bucket, dst_key)
             else:
-                s3_client.copy_object(
-                    body.src_bucket, src_key, body.dst_bucket, dst_key
-                )
+                s3_client.copy_object(body.src_bucket, src_key, body.dst_bucket, dst_key)
         return {"status": "ok"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

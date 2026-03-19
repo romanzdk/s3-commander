@@ -1,7 +1,7 @@
 [project]
-name = "s3-dual-pane-browser"
+name = "s3-commander"
 version = "0.1.0"
-description = "Total Commander-style dual-pane S3 file browser with server-side move/copy"
+description = "S3 Commander - Total Commander-style dual-pane S3 file browser with server-side move/copy"
 authors = [{ name = "Quantlane", email = "info@quantlane.com" }]
 license = "LicenseRef-Proprietary"
 readme = "README.md"
@@ -30,3 +30,8 @@ line-length = 120
 [tool.ruff.lint]
 select = ["E", "F", "B", "SIM", "I", "RUF", "LOG", "S", "BLE", "A", "C4", "FA", "PL"]
 ignore = ["S101", "ISC001"]
+
+[dependency-groups]
+dev = [
+    "ruff (>=0.15.7,<0.16.0)"
+]
