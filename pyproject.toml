@@ -1,0 +1,32 @@
+[project]
+name = "s3-dual-pane-browser"
+version = "0.1.0"
+description = "Total Commander-style dual-pane S3 file browser with server-side move/copy"
+authors = [{ name = "Quantlane", email = "info@quantlane.com" }]
+license = "LicenseRef-Proprietary"
+readme = "README.md"
+requires-python = ">=3.10, <4.0"
+dependencies = [
+    "fastapi (>=0.115.0,<1.0)",
+    "uvicorn[standard] (>=0.32.0,<1.0)",
+    "boto3 (>=1.35.0,<2.0)",
+]
+
+[tool.poetry]
+package-mode = true
+packages = [{ include = "s3_browser" }]
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+
+[build-system]
+requires = ["poetry-core>=1.8.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "SIM", "I", "RUF", "LOG", "S", "BLE", "A", "C4", "FA", "PL"]
+ignore = ["S101", "ISC001"]
