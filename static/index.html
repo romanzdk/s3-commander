@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S3 Dual-Pane Browser</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="toolbar">
+    <button id="btn-copy" title="Copy (F5)">Copy F5</button>
+    <button id="btn-move" title="Move (F6)">Move F6</button>
+    <button id="btn-delete" title="Delete (F8)">Delete F8</button>
+    <button id="btn-refresh" title="Refresh">Refresh</button>
+  </header>
+
+  <main class="panes">
+    <section class="pane" data-pane="0">
+      <div class="pane-header">
+        <label>Path:</label>
+        <input type="text" class="path-input" data-path="0" placeholder="s3://bucket/prefix/">
+        <button class="btn-go" data-go="0">Go</button>
+      </div>
+      <div class="pane-content">
+        <table class="file-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" class="select-all" data-pane="0"></th>
+              <th>Name</th>
+              <th>Size</th>
+              <th>Modified</th>
+            </tr>
+          </thead>
+          <tbody data-rows="0"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="pane" data-pane="1">
+      <div class="pane-header">
+        <label>Path:</label>
+        <input type="text" class="path-input" data-path="1" placeholder="s3://bucket/prefix/">
+        <button class="btn-go" data-go="1">Go</button>
+      </div>
+      <div class="pane-content">
+        <table class="file-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" class="select-all" data-pane="1"></th>
+              <th>Name</th>
+              <th>Size</th>
+              <th>Modified</th>
+            </tr>
+          </thead>
+          <tbody data-rows="1"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="status" class="status"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
