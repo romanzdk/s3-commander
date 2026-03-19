@@ -60,7 +60,7 @@ function renderPane(paneIdx) {
       tr.dataset.bucket = b.name;
       tr.innerHTML = `
         <td></td>
-        <td class="prefix">${escapeHtml(b.name)}/</td>
+        <td class="prefix name-cell">${ICON_FOLDER}${escapeHtml(b.name)}/</td>
         <td class="size"></td>
         <td class="modified">${escapeHtml(new Date(b.created).toLocaleDateString())}</td>
       `;
@@ -84,7 +84,7 @@ function renderPane(paneIdx) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td></td>
-      <td class="prefix">..</td>
+      <td class="prefix name-cell">${ICON_FOLDER}..</td>
       <td class="size"></td>
       <td class="modified"></td>
     `;
@@ -105,9 +105,11 @@ function renderPane(paneIdx) {
     const size = obj.is_prefix ? "" : formatSize(obj.size);
     const modified = obj.last_modified ? new Date(obj.last_modified).toLocaleString() : "";
 
+    const icon = obj.is_prefix ? ICON_FOLDER : ICON_FILE;
+    const nameClass = obj.is_prefix ? "prefix name-cell" : "name-cell";
     tr.innerHTML = `
       <td><input type="checkbox" class="row-check" data-key="${escapeAttr(obj.key)}" data-is-prefix="${obj.is_prefix ? "1" : "0"}"></td>
-      <td class="${obj.is_prefix ? "prefix" : ""}">${escapeHtml(name)}</td>
+      <td class="${nameClass}">${icon}${escapeHtml(name)}</td>
       <td class="size">${escapeHtml(size)}</td>
       <td class="modified">${escapeHtml(modified)}</td>
     `;
@@ -139,6 +141,9 @@ function renderPane(paneIdx) {
   selectAll.checked = false;
   selectAll.indeterminate = false;
 }
+
+const ICON_FOLDER = '<span class="icon icon-folder" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>';
+const ICON_FILE = '<span class="icon icon-file" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>';
 
 function escapeHtml(s) {
   const div = document.createElement("div");
@@ -328,6 +333,21 @@ function init() {
   document.getElementById("btn-refresh").addEventListener("click", () => {
     loadPane(0);
     loadPane(1);
+  });
+
+  const themeKey = "s3-browser-theme";
+  const btnTheme = document.getElementById("btn-theme");
+  const savedTheme = localStorage.getItem(themeKey);
+  if (savedTheme === "light") {
+    document.documentElement.setAttribute("data-theme", "light");
+    btnTheme.textContent = "Dark";
+  }
+
+  btnTheme.addEventListener("click", () => {
+    const isLight = document.documentElement.getAttribute("data-theme") === "light";
+    document.documentElement.setAttribute("data-theme", isLight ? "" : "light");
+    btnTheme.textContent = isLight ? "Light" : "Dark";
+    localStorage.setItem(themeKey, isLight ? "dark" : "light");
   });
 
   document.querySelectorAll(".select-all").forEach((cb, idx) => {
