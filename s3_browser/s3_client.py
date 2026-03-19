@@ -19,8 +19,6 @@ class S3Object:
     is_prefix: bool
 
 
-
-
 def list_buckets() -> list[dict[str, Any]]:
     """List all S3 buckets in the account."""
     client = _get_client_internal()
@@ -55,9 +53,7 @@ def list_objects(bucket: str, prefix: str = "", max_keys: int = 1000) -> list[S3
                 top = name.split("/")[0]
                 if top not in seen_prefixes:
                     seen_prefixes.add(top)
-                    objects.append(
-                        S3Object(key=prefix + top + "/", size=0, last_modified=None, is_prefix=True)
-                    )
+                    objects.append(S3Object(key=prefix + top + "/", size=0, last_modified=None, is_prefix=True))
             else:
                 objects.append(
                     S3Object(
@@ -109,9 +105,7 @@ def delete_prefix(bucket: str, prefix: str) -> None:
             logger.info("Deleted s3://%s/%s", bucket, obj["Key"])
 
 
-def copy_prefix_recursive(
-    src_bucket: str, src_prefix: str, dst_bucket: str, dst_prefix: str
-) -> None:
+def copy_prefix_recursive(src_bucket: str, src_prefix: str, dst_bucket: str, dst_prefix: str) -> None:
     """Recursively copy all objects under a prefix."""
     client = _get_client_internal()
     paginator = client.get_paginator("list_objects_v2")
