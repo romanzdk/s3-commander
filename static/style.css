@@ -266,10 +266,13 @@ body {
   font-size: 11px;
 }
 
-.status {
-  padding: 4px 12px;
+.status-bar {
   background: var(--bg-panel);
   border-top: 1px solid var(--border);
+}
+
+.status {
+  padding: 4px 12px;
   font-size: 11px;
   color: var(--text-muted);
   min-height: 24px;
@@ -283,4 +286,39 @@ body {
 
 .status.success {
   color: var(--success);
+}
+
+.progress {
+  height: 4px;
+  background: var(--bg-input);
+  overflow: hidden;
+  display: none;
+}
+
+.status-bar.operating .progress {
+  display: block;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.progress.indeterminate .progress-fill {
+  width: 30%;
+  animation: progress-indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(433%);
+  }
+}
+
+.progress.determinate .progress-fill {
+  animation: none;
 }

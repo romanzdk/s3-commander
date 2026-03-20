@@ -2,6 +2,7 @@ const API = "/api";
 
 let activePane = 0;
 let operationAbortController = null;
+let loadingCount = 0;
 const paneState = [
   { bucket: "", prefix: "", objects: [], buckets: null },
   { bucket: "", prefix: "", objects: [], buckets: null },
@@ -11,6 +12,36 @@ function setStatus(msg, type = "") {
   const el = document.getElementById("status");
   el.textContent = msg;
   el.className = "status " + type;
+}
+
+function showProgress(mode = "indeterminate", percent = 0) {
+  const bar = document.getElementById("status-bar");
+  const progress = document.getElementById("progress");
+  const fill = progress.querySelector(".progress-fill");
+  bar.classList.add("operating");
+  progress.style.display = "block";
+  if (mode === "indeterminate") {
+    progress.classList.remove("determinate");
+    progress.classList.add("indeterminate");
+  } else {
+    progress.classList.remove("indeterminate");
+    progress.classList.add("determinate");
+    fill.style.width = (percent ?? 0) + "%";
+  }
+}
+
+function hideProgress() {
+  if (loadingCount > 0) {
+    loadingCount--;
+    if (loadingCount > 0) return;
+  }
+  document.getElementById("status-bar").classList.remove("operating");
+  document.getElementById("progress").style.display = "none";
+}
+
+function showLoadingProgress() {
+  loadingCount++;
+  showProgress("indeterminate");
 }
 
 function parsePath(pathStr) {
@@ -184,16 +215,20 @@ async function loadPane(paneIdx) {
   if (!state.bucket) {
     state.objects = [];
     state.buckets = null;
+    showLoadingProgress();
     try {
       state.buckets = await fetchBuckets();
     } catch (err) {
       setStatus("Error: " + err.message, "error");
       state.buckets = [];
+    } finally {
+      hideProgress();
     }
     renderPane(paneIdx);
     return;
   }
   state.buckets = null;
+  showLoadingProgress();
   try {
     const data = await fetchObjects(state.bucket, state.prefix);
     state.objects = data.objects;
@@ -203,6 +238,8 @@ async function loadPane(paneIdx) {
     setStatus("Error: " + err.message, "error");
     state.objects = [];
     renderPane(paneIdx);
+  } finally {
+    hideProgress();
   }
 }
 
@@ -254,6 +291,8 @@ async function doCopy() {
   const itemSummary = formatItemSummary(keys);
   operationAbortController = new AbortController();
   showCancelButton(true);
+  loadingCount = 0;
+  showProgress("indeterminate");
   try {
     setStatus("Copying " + itemSummary + " from " + srcPath + " → " + dstPath);
     const res = await fetch(API + "/copy", {
@@ -278,6 +317,7 @@ async function doCopy() {
       setStatus("Error: " + err.message, "error");
     }
   } finally {
+    hideProgress();
     showCancelButton(false);
     operationAbortController = null;
   }
@@ -300,6 +340,8 @@ async function doMove() {
   const itemSummary = formatItemSummary(keys);
   operationAbortController = new AbortController();
   showCancelButton(true);
+  loadingCount = 0;
+  showProgress("indeterminate");
   try {
     setStatus("Moving " + itemSummary + " from " + srcPath + " → " + dstPath);
     const res = await fetch(API + "/move", {
@@ -324,6 +366,7 @@ async function doMove() {
       setStatus("Error: " + err.message, "error");
     }
   } finally {
+    hideProgress();
     showCancelButton(false);
     operationAbortController = null;
   }
@@ -339,10 +382,15 @@ async function doDelete() {
   if (!confirm("Delete " + keys.length + " item(s)?")) return;
   const srcPath = formatPath(state.bucket, state.prefix);
   const itemSummary = formatItemSummary(keys);
+  const keysToDelete = keys.filter((k) => k !== "..");
+  const total = keysToDelete.length;
   operationAbortController = new AbortController();
   showCancelButton(true);
+  loadingCount = 0;
+  showProgress("determinate", 0);
   try {
     setStatus("Deleting " + itemSummary + " from " + srcPath);
+    let done = 0;
     for (const key of keys) {
       if (operationAbortController.signal.aborted) break;
       if (key === "..") continue;
@@ -351,6 +399,8 @@ async function doDelete() {
         signal: operationAbortController.signal,
       });
       if (!res.ok) throw new Error(await res.text());
+      done++;
+      showProgress("determinate", Math.round((done / total) * 100));
     }
     if (!operationAbortController.signal.aborted) {
       setStatus("Deleted " + itemSummary + " from " + srcPath, "success");
@@ -364,6 +414,7 @@ async function doDelete() {
     }
     loadPane(activePane);
   } finally {
+    hideProgress();
     showCancelButton(false);
     operationAbortController = null;
   }
