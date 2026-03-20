@@ -234,6 +234,8 @@ body {
   font-size: 11px;
   color: var(--text-muted);
   min-height: 24px;
+  overflow-wrap: break-word;
+  word-break: break-all;
 }
 
 .status.error {

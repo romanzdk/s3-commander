@@ -200,6 +200,16 @@ function getTargetPane() {
   return activePane === 0 ? 1 : 0;
 }
 
+function formatItemSummary(keys) {
+  const filtered = keys.filter((k) => k !== "..");
+  if (filtered.length === 0) return "";
+  if (filtered.length === 1) {
+    const name = filtered[0].split("/").filter(Boolean).pop();
+    return name || filtered[0];
+  }
+  return filtered.length + " items";
+}
+
 async function doCopy() {
   const src = paneState[activePane];
   const dst = paneState[getTargetPane()];
@@ -212,8 +222,11 @@ async function doCopy() {
     setStatus("Set destination path in the other pane", "error");
     return;
   }
+  const srcPath = formatPath(src.bucket, src.prefix);
+  const dstPath = formatPath(dst.bucket, dst.prefix);
+  const itemSummary = formatItemSummary(keys);
   try {
-    setStatus("Copying...");
+    setStatus("Copying " + itemSummary + " from " + srcPath + " → " + dstPath);
     const res = await fetch(API + "/copy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -225,7 +238,7 @@ async function doCopy() {
       }),
     });
     if (!res.ok) throw new Error(await res.text());
-    setStatus("Copied successfully", "success");
+    setStatus("Copied " + itemSummary + " to " + dstPath, "success");
     loadPane(activePane);
     loadPane(getTargetPane());
   } catch (err) {
@@ -245,8 +258,11 @@ async function doMove() {
     setStatus("Set destination path in the other pane", "error");
     return;
   }
+  const srcPath = formatPath(src.bucket, src.prefix);
+  const dstPath = formatPath(dst.bucket, dst.prefix);
+  const itemSummary = formatItemSummary(keys);
   try {
-    setStatus("Moving...");
+    setStatus("Moving " + itemSummary + " from " + srcPath + " → " + dstPath);
     const res = await fetch(API + "/move", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -258,7 +274,7 @@ async function doMove() {
       }),
     });
     if (!res.ok) throw new Error(await res.text());
-    setStatus("Moved successfully", "success");
+    setStatus("Moved " + itemSummary + " to " + dstPath, "success");
     loadPane(activePane);
     loadPane(getTargetPane());
   } catch (err) {
@@ -274,8 +290,10 @@ async function doDelete() {
     return;
   }
   if (!confirm("Delete " + keys.length + " item(s)?")) return;
+  const srcPath = formatPath(state.bucket, state.prefix);
+  const itemSummary = formatItemSummary(keys);
   try {
-    setStatus("Deleting...");
+    setStatus("Deleting " + itemSummary + " from " + srcPath);
     for (const key of keys) {
       if (key === "..") continue;
       const res = await fetch(API + "/object?bucket=" + encodeURIComponent(state.bucket) + "&key=" + encodeURIComponent(key), {
@@ -283,7 +301,7 @@ async function doDelete() {
       });
       if (!res.ok) throw new Error(await res.text());
     }
-    setStatus("Deleted successfully", "success");
+    setStatus("Deleted " + itemSummary + " from " + srcPath, "success");
     loadPane(activePane);
   } catch (err) {
     setStatus("Error: " + err.message, "error");
