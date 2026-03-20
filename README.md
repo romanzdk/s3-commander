@@ -130,6 +130,10 @@ s3-commander/
 - 🔒 No authentication layer — assume behind VPN, reverse proxy, or internal network
 - 🔑 Credentials are read from the environment; never hardcode or expose in the UI
 
+## Related
+
+- [S3 Web Browser](https://github.com/romanzdk/s3-web-browser) — Flask-based S3 browser with search, presigned URLs, and pagination.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
