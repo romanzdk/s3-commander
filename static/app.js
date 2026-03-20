@@ -58,12 +58,17 @@ function renderPane(paneIdx) {
     for (const b of state.buckets) {
       const tr = document.createElement("tr");
       tr.dataset.bucket = b.name;
+      const bucketPath = "s3://" + b.name + "/";
       tr.innerHTML = `
         <td></td>
-        <td class="prefix name-cell">${ICON_FOLDER}${escapeHtml(b.name)}/</td>
+        <td class="prefix name-cell">${ICON_FOLDER}${escapeHtml(b.name)}/<button type="button" class="btn-copy-path" title="Copy path">${ICON_COPY}</button></td>
         <td class="size"></td>
         <td class="modified">${escapeHtml(new Date(b.created).toLocaleDateString())}</td>
       `;
+      tr.querySelector(".btn-copy-path").addEventListener("click", (e) => {
+        e.stopPropagation();
+        copyPathToClipboard(bucketPath);
+      });
       tr.addEventListener("click", () => {
         state.bucket = b.name;
         state.prefix = "";
@@ -107,12 +112,21 @@ function renderPane(paneIdx) {
 
     const icon = obj.is_prefix ? ICON_FOLDER : ICON_FILE;
     const nameClass = obj.is_prefix ? "prefix name-cell" : "name-cell";
+    const fullPath = obj.key === ".." ? "" : "s3://" + state.bucket + "/" + obj.key;
+    const copyBtn = obj.key === ".." ? "" : `<button type="button" class="btn-copy-path" title="Copy path">${ICON_COPY}</button>`;
     tr.innerHTML = `
       <td><input type="checkbox" class="row-check" data-key="${escapeAttr(obj.key)}" data-is-prefix="${obj.is_prefix ? "1" : "0"}"></td>
-      <td class="${nameClass}">${icon}${escapeHtml(name)}</td>
+      <td class="${nameClass}">${icon}${escapeHtml(name)}${copyBtn}</td>
       <td class="size">${escapeHtml(size)}</td>
       <td class="modified">${escapeHtml(modified)}</td>
     `;
+
+    if (copyBtn) {
+      tr.querySelector(".btn-copy-path").addEventListener("click", (e) => {
+        e.stopPropagation();
+        copyPathToClipboard(fullPath);
+      });
+    }
 
     tr.addEventListener("click", (e) => {
       if (e.target.type === "checkbox") return;
@@ -144,6 +158,7 @@ function renderPane(paneIdx) {
 
 const ICON_FOLDER = '<span class="icon icon-folder" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>';
 const ICON_FILE = '<span class="icon icon-file" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>';
+const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
 
 function escapeHtml(s) {
   const div = document.createElement("div");
@@ -208,6 +223,13 @@ function formatItemSummary(keys) {
     return name || filtered[0];
   }
   return filtered.length + " items";
+}
+
+function copyPathToClipboard(path) {
+  navigator.clipboard.writeText(path).then(
+    () => setStatus("Copied " + path + " to clipboard", "success"),
+    () => setStatus("Failed to copy to clipboard", "error")
+  );
 }
 
 async function doCopy() {
