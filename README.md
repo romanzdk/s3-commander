@@ -17,8 +17,12 @@ A Total Commander-style dual-pane file browser for AWS S3. Browse buckets and ob
 - ⚡ **Server-side move/copy** — Uses S3 CopyObject + DeleteObject (like `aws s3 mv`), no data transfer through your machine
 - 🪣 **Bucket list on startup** — Buckets load automatically when you open the app
 - ⌨️ **Keyboard shortcuts** — F5 Copy, F6 Move, F8 Delete
-- 🌓 **Dark/light mode** — Theme toggle with preference persistence
+- 🌓 **Dark/light mode** — Theme toggle with preference persistence (saved in localStorage)
 - 📁 **Folder and file icons** — Visual distinction for prefixes and objects
+- 📋 **Copy path button** — Small button next to each file/folder that copies the full `s3://bucket/key` path to clipboard
+- ⏹️ **Cancel operation** — Cancel in-progress copy, move, or delete
+- 📊 **Progress bar** — Status bar shows a progress indicator: indeterminate for copy/move/loading, determinate for multi-item delete
+- 📍 **Operation status** — Status bar displays source and destination paths during move/copy, and source during delete
 
 ## Disclaimer
 
@@ -81,6 +85,19 @@ docker run -e AWS_ACCESS_KEY_ID=xxx -e AWS_SECRET_ACCESS_KEY=xxx -p 8000:8000 s3
 5. **Copy (F5)** — Copy selected items to the other pane
 6. **Move (F6)** — Move selected items to the other pane (server-side)
 7. **Delete (F8)** — Delete selected items
+8. **Copy path** — Click the small copy icon next to any file/folder to copy its full S3 path to clipboard
+9. **Cancel** — Click Cancel (or let the operation finish) while copy, move, or delete is in progress
+
+### Toolbar
+
+| Button | Action |
+|-------|--------|
+| Copy F5 | Copy selected items to the other pane |
+| Move F6 | Move selected items to the other pane |
+| Delete F8 | Delete selected items |
+| Refresh | Reload both panes |
+| Cancel | Abort the current operation (visible only during copy/move/delete) |
+| Light/Dark | Toggle theme |
 
 ## Development
 
@@ -103,7 +120,9 @@ s3-commander/
 │   ├── style.css
 │   └── app.js
 ├── pyproject.toml
-└── Dockerfile
+├── Dockerfile
+├── .dockerignore
+└── .gitignore
 ```
 
 ## Security
