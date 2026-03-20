@@ -1,6 +1,7 @@
 const API = "/api";
 
 let activePane = 0;
+let operationAbortController = null;
 const paneState = [
   { bucket: "", prefix: "", objects: [], buckets: null },
   { bucket: "", prefix: "", objects: [], buckets: null },
@@ -225,6 +226,10 @@ function formatItemSummary(keys) {
   return filtered.length + " items";
 }
 
+function showCancelButton(show) {
+  document.getElementById("btn-cancel").style.display = show ? "inline-block" : "none";
+}
+
 function copyPathToClipboard(path) {
   navigator.clipboard.writeText(path).then(
     () => setStatus("Copied " + path + " to clipboard", "success"),
@@ -247,6 +252,8 @@ async function doCopy() {
   const srcPath = formatPath(src.bucket, src.prefix);
   const dstPath = formatPath(dst.bucket, dst.prefix);
   const itemSummary = formatItemSummary(keys);
+  operationAbortController = new AbortController();
+  showCancelButton(true);
   try {
     setStatus("Copying " + itemSummary + " from " + srcPath + " → " + dstPath);
     const res = await fetch(API + "/copy", {
@@ -258,13 +265,21 @@ async function doCopy() {
         dst_bucket: dst.bucket,
         dst_prefix: dst.prefix,
       }),
+      signal: operationAbortController.signal,
     });
     if (!res.ok) throw new Error(await res.text());
     setStatus("Copied " + itemSummary + " to " + dstPath, "success");
     loadPane(activePane);
     loadPane(getTargetPane());
   } catch (err) {
-    setStatus("Error: " + err.message, "error");
+    if (err.name === "AbortError") {
+      setStatus("Copy cancelled", "error");
+    } else {
+      setStatus("Error: " + err.message, "error");
+    }
+  } finally {
+    showCancelButton(false);
+    operationAbortController = null;
   }
 }
 
@@ -283,6 +298,8 @@ async function doMove() {
   const srcPath = formatPath(src.bucket, src.prefix);
   const dstPath = formatPath(dst.bucket, dst.prefix);
   const itemSummary = formatItemSummary(keys);
+  operationAbortController = new AbortController();
+  showCancelButton(true);
   try {
     setStatus("Moving " + itemSummary + " from " + srcPath + " → " + dstPath);
     const res = await fetch(API + "/move", {
@@ -294,13 +311,21 @@ async function doMove() {
         dst_bucket: dst.bucket,
         dst_prefix: dst.prefix,
       }),
+      signal: operationAbortController.signal,
     });
     if (!res.ok) throw new Error(await res.text());
     setStatus("Moved " + itemSummary + " to " + dstPath, "success");
     loadPane(activePane);
     loadPane(getTargetPane());
   } catch (err) {
-    setStatus("Error: " + err.message, "error");
+    if (err.name === "AbortError") {
+      setStatus("Move cancelled", "error");
+    } else {
+      setStatus("Error: " + err.message, "error");
+    }
+  } finally {
+    showCancelButton(false);
+    operationAbortController = null;
   }
 }
 
@@ -314,19 +339,33 @@ async function doDelete() {
   if (!confirm("Delete " + keys.length + " item(s)?")) return;
   const srcPath = formatPath(state.bucket, state.prefix);
   const itemSummary = formatItemSummary(keys);
+  operationAbortController = new AbortController();
+  showCancelButton(true);
   try {
     setStatus("Deleting " + itemSummary + " from " + srcPath);
     for (const key of keys) {
+      if (operationAbortController.signal.aborted) break;
       if (key === "..") continue;
       const res = await fetch(API + "/object?bucket=" + encodeURIComponent(state.bucket) + "&key=" + encodeURIComponent(key), {
         method: "DELETE",
+        signal: operationAbortController.signal,
       });
       if (!res.ok) throw new Error(await res.text());
     }
-    setStatus("Deleted " + itemSummary + " from " + srcPath, "success");
+    if (!operationAbortController.signal.aborted) {
+      setStatus("Deleted " + itemSummary + " from " + srcPath, "success");
+    }
     loadPane(activePane);
   } catch (err) {
-    setStatus("Error: " + err.message, "error");
+    if (err.name === "AbortError") {
+      setStatus("Delete cancelled", "error");
+    } else {
+      setStatus("Error: " + err.message, "error");
+    }
+    loadPane(activePane);
+  } finally {
+    showCancelButton(false);
+    operationAbortController = null;
   }
 }
 
@@ -370,6 +409,9 @@ function init() {
   document.getElementById("btn-copy").addEventListener("click", doCopy);
   document.getElementById("btn-move").addEventListener("click", doMove);
   document.getElementById("btn-delete").addEventListener("click", doDelete);
+  document.getElementById("btn-cancel").addEventListener("click", () => {
+    if (operationAbortController) operationAbortController.abort();
+  });
   document.getElementById("btn-refresh").addEventListener("click", () => {
     loadPane(0);
     loadPane(1);
