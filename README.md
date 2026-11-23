@@ -137,3 +137,7 @@ s3-commander/
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+Made by [Roman Žydyk](https://romanzdk.com).
