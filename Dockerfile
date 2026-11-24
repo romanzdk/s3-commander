@@ -42,7 +42,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm
 
 ARG OCI_LABEL_TITLE="s3-commander"
 ARG OCI_LABEL_SOURCE=""
-ARG OCI_LABEL_VENDOR="Quantlane"
+ARG OCI_LABEL_VENDOR="Roman Žydyk"
 
 LABEL org.opencontainers.image.title="${OCI_LABEL_TITLE}" \
       org.opencontainers.image.source="${OCI_LABEL_SOURCE}" \
